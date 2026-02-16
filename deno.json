@@ -1,0 +1,16 @@
+{
+  "name": "notion-md-serde",
+  "version": "0.1.0",
+  "exports": {
+    ".": "./dist/index.js",
+    "./serialize": "./dist/serialize.js",
+    "./deserialize": "./dist/deserialize.js"
+  },
+  "compilerOptions": {
+    "strict": true,
+    "lib": ["deno.window"]
+  },
+  "tasks": {
+    "test": "deno test deno_test.ts"
+  }
+}
