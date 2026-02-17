@@ -22,6 +22,7 @@ import { visitChildDatabase } from "./child-database";
 import { visitTableOfContents } from "./table-of-contents";
 import { visitBreadcrumb } from "./breadcrumb";
 import { visitLinkPreview } from "./link-preview";
+import { visitLinkToPage } from "./link-to-page";
 import { visitVideo } from "./video";
 import { visitAudio } from "./audio";
 import { visitFile } from "./file";
@@ -57,6 +58,7 @@ const VISITORS: Record<string, (block: NotionBlock, ctx: SerializeContext) => st
   table_of_contents: visitTableOfContents,
   breadcrumb: visitBreadcrumb,
   link_preview: visitLinkPreview,
+  link_to_page: visitLinkToPage,
 };
 
 export function getVisitor(type: string): ((block: NotionBlock, ctx: SerializeContext) => string[]) | undefined {

@@ -12,41 +12,50 @@ const DEFAULT_ANNOTATIONS: NotionAnnotations = {
 
 function wrapWithAnnotations(content: string, ann: NotionAnnotations): string {
   if (!content) return content;
-  let out = content;
-  if (ann.code) out = `\`${out}\``;
-  if (ann.bold && ann.italic) out = `***${out}***`;
-  else if (ann.bold) out = `**${out}**`;
-  else if (ann.italic) out = `*${out}*`;
-  if (ann.strikethrough) out = `~~${out}~~`;
-  if (ann.underline) out = `__${out}__`;
-  return out;
+  const needsWrap = ann.bold || ann.italic || ann.strikethrough || ann.underline || ann.code;
+  if (!needsWrap) return content;
+
+  const leadingWs = content.match(/^(\s*)/)?.[1] ?? "";
+  const trailingWs = content.match(/(\s*)$/)?.[1] ?? "";
+  let inner = content.slice(leadingWs.length, content.length - (trailingWs.length || 0) || content.length);
+  if (!inner) return content;
+
+  if (ann.code) inner = `\`${inner}\``;
+  if (ann.bold && ann.italic) inner = `***${inner}***`;
+  else if (ann.bold) inner = `**${inner}**`;
+  else if (ann.italic) inner = `*${inner}*`;
+  if (ann.strikethrough) inner = `~~${inner}~~`;
+  if (ann.underline) inner = `__${inner}__`;
+  return leadingWs + inner + trailingWs;
+}
+
+function normalizeQuotes(s: string): string {
+  return s
+    .replace(/[\u2018\u2019\u201A\u201B]/g, "'")
+    .replace(/[\u201C\u201D\u201E\u201F]/g, '"');
 }
 
 function escapeContent(content: string, isCode: boolean): string {
-  return isCode ? content : escapeForMarkdown(content);
+  const normalized = normalizeQuotes(content);
+  return isCode ? normalized : escapeForMarkdown(normalized);
 }
 
 function serializeMention(rt: NotionRichText): string {
-  const m = rt.mention;
-  if (!m) return rt.plain_text ?? "";
-  if ("page" in m && m.page) return `<mention-page id="${m.page.id}">${rt.plain_text ?? ""}</mention-page>`;
-  if ("database" in m && m.database) return `<mention-database id="${m.database.id}">${rt.plain_text ?? ""}</mention-database>`;
-  if ("user" in m && m.user) return `<mention-user id="${m.user.id}">${rt.plain_text ?? ""}</mention-user>`;
-  if ("date" in m && m.date) {
-    const { start, end } = m.date;
-    const attrs = end ? ` start="${start}" end="${end}"` : ` start="${start}"`;
-    return `<mention-date${attrs}>${rt.plain_text ?? start}</mention-date>`;
-  }
   return rt.plain_text ?? "";
 }
 
 /**
- * Convert a Notion rich text array to inline Notion-flavored Markdown.
+ * Convert a Notion rich text array to inline Markdown.
+ * @param opts.suppressBold  When true, bold annotations are ignored (useful for headings).
  */
-export function richTextToInlineMarkdown(richText: NotionRichText[]): string {
+export function richTextToInlineMarkdown(
+  richText: NotionRichText[],
+  opts?: { suppressBold?: boolean },
+): string {
   const parts: string[] = [];
   for (const rt of richText) {
     const ann = { ...DEFAULT_ANNOTATIONS, ...rt.annotations };
+    if (opts?.suppressBold) ann.bold = false;
     if (rt.type === "equation" && rt.equation) {
       parts.push(`$${rt.equation.expression}$`);
       continue;

@@ -15,9 +15,10 @@ function getEmbedCaption(block: NotionBlock): string {
   return cap.map((c) => c.plain_text ?? "").join("");
 }
 
-export function visitEmbed(block: NotionBlock, _ctx: SerializeContext): string[] {
+export function visitEmbed(block: NotionBlock, ctx: SerializeContext): string[] {
   const url = getEmbedUrl(block);
   const caption = getEmbedCaption(block);
   if (!url) return [];
-  return [`<embed url="${url}">${caption}</embed>`];
+  const label = caption || url;
+  return [`${ctx.indent}[${label}](${url})`];
 }

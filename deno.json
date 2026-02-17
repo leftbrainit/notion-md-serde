@@ -1,6 +1,6 @@
 {
   "name": "notion-md-serde",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "exports": {
     ".": "./dist/index.js",
     "./serialize": "./dist/serialize.js",

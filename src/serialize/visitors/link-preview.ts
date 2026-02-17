@@ -7,8 +7,8 @@ function getLinkPreviewUrl(block: NotionBlock): string {
   return (payload as { url?: string }).url ?? "";
 }
 
-export function visitLinkPreview(block: NotionBlock, _ctx: SerializeContext): string[] {
+export function visitLinkPreview(block: NotionBlock, ctx: SerializeContext): string[] {
   const url = getLinkPreviewUrl(block);
   if (!url) return [];
-  return [`<link_preview url="${url}"/>`];
+  return [`${ctx.indent}[${url}](${url})`];
 }

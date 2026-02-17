@@ -1,6 +1,6 @@
 {
   "name": "notion-md-serde",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Bidirectional conversion between Notion-flavored Markdown and Notion API block JSON",
   "type": "module",
   "main": "./dist/index.cjs",

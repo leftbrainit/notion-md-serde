@@ -16,9 +16,10 @@ function getMediaCaption(block: NotionBlock): string {
   return cap.map((c) => c.plain_text ?? "").join("");
 }
 
-export function visitAudio(block: NotionBlock, _ctx: SerializeContext): string[] {
+export function visitAudio(block: NotionBlock, ctx: SerializeContext): string[] {
   const url = getMediaUrl(block);
   const caption = getMediaCaption(block);
   if (!url) return [];
-  return [`<audio url="${url}">${caption}</audio>`];
+  const label = caption || "Audio";
+  return [`${ctx.indent}[${label}](${url})`];
 }

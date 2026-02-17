@@ -16,9 +16,10 @@ function getMediaCaption(block: NotionBlock): string {
   return cap.map((c) => c.plain_text ?? "").join("");
 }
 
-export function visitFile(block: NotionBlock, _ctx: SerializeContext): string[] {
+export function visitFile(block: NotionBlock, ctx: SerializeContext): string[] {
   const url = getMediaUrl(block);
   const caption = getMediaCaption(block);
   if (!url) return [];
-  return [`<file url="${url}">${caption}</file>`];
+  const label = caption || "File";
+  return [`${ctx.indent}[${label}](${url})`];
 }

@@ -15,9 +15,10 @@ function getBookmarkCaption(block: NotionBlock): string {
   return cap.map((c) => c.plain_text ?? "").join("");
 }
 
-export function visitBookmark(block: NotionBlock, _ctx: SerializeContext): string[] {
+export function visitBookmark(block: NotionBlock, ctx: SerializeContext): string[] {
   const url = getBookmarkUrl(block);
   const caption = getBookmarkCaption(block);
   if (!url) return [];
-  return [`<bookmark url="${url}">${caption}</bookmark>`];
+  const label = caption || url;
+  return [`${ctx.indent}[${label}](${url})`];
 }

@@ -5,7 +5,8 @@ import { normalizeNotionColor } from "../utils/colors";
 export function getBlockRichText(block: NotionBlock): NotionRichText[] {
   const payload = block[block.type];
   if (!payload || typeof payload !== "object") return [];
-  const rt = (payload as { rich_text?: NotionRichText[] }).rich_text;
+  const p = payload as { rich_text?: NotionRichText[]; text?: NotionRichText[] };
+  const rt = p.rich_text ?? p.text;
   return Array.isArray(rt) ? rt : [];
 }
 
@@ -16,8 +17,8 @@ export function getBlockColor(block: NotionBlock): NotionColor | undefined {
   return color as NotionColor | undefined;
 }
 
-export function blockRichTextToMd(block: NotionBlock): string {
-  return richTextToInlineMarkdown(getBlockRichText(block));
+export function blockRichTextToMd(block: NotionBlock, opts?: { suppressBold?: boolean }): string {
+  return richTextToInlineMarkdown(getBlockRichText(block), opts);
 }
 
 export function colorSuffix(block: NotionBlock): string {

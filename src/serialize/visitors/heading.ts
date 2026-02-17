@@ -1,19 +1,22 @@
 import type { NotionBlock } from "../../types";
 import type { SerializeContext } from "../types";
-import { blockRichTextToMd, colorSuffix, getBlockChildren } from "../block-helpers";
+import { blockRichTextToMd, getBlockChildren } from "../block-helpers";
 
 export function visitHeading(
   block: NotionBlock,
   ctx: SerializeContext,
   level: 1 | 2 | 3,
 ): string[] {
-  const payload = block[block.type];
-  const isToggleable = payload && typeof payload === "object" && (payload as { is_toggleable?: boolean }).is_toggleable;
-  const prefix = isToggleable ? "▶" + "#".repeat(level) : "#".repeat(level);
-  const md = blockRichTextToMd(block);
-  const color = colorSuffix(block);
-  const line = `${prefix} ${md}${color}`.trimEnd();
+  const actualLevel = Math.min(level + ctx.headingLevelOffset, 6) as 1 | 2 | 3 | 4 | 5 | 6;
+  const prefix = "#".repeat(actualLevel);
+  const md = blockRichTextToMd(block, { suppressBold: true });
+  const line = md ? `${ctx.indent}${prefix} ${md}` : `${ctx.indent}${prefix}`;
+
   const children = getBlockChildren(block);
-  const childLines = children.length ? ctx.visitChildren(children) : [];
-  return [line, ...childLines];
+  if (!children.length) return [line];
+  const childLines = ctx.visitChildren(children, {
+    indent: ctx.indent,
+    headingLevelOffset: ctx.headingLevelOffset + 1,
+  });
+  return [line, "", ...childLines];
 }

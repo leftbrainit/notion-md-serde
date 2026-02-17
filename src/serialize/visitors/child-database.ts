@@ -7,10 +7,8 @@ function getDatabaseTitle(block: NotionBlock): string {
   return (payload as { title?: string }).title ?? "";
 }
 
-export function visitChildDatabase(block: NotionBlock, _ctx: SerializeContext): string[] {
-  const payload = block[block.type];
-  const url = (payload && typeof payload === "object" && (payload as { url?: string }).url) ?? "";
+export function visitChildDatabase(block: NotionBlock, ctx: SerializeContext): string[] {
   const title = getDatabaseTitle(block);
-  if (!url) return [];
-  return [`<database url="${url}">${title}</database>`];
+  if (!title || title === "Untitled") return [];
+  return [`${ctx.indent}[${title}](https://notion.so/${(block.id ?? "").replace(/-/g, "")})`];
 }

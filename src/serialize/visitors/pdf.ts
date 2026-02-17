@@ -16,9 +16,10 @@ function getPdfCaption(block: NotionBlock): string {
   return cap.map((c) => c.plain_text ?? "").join("");
 }
 
-export function visitPdf(block: NotionBlock, _ctx: SerializeContext): string[] {
+export function visitPdf(block: NotionBlock, ctx: SerializeContext): string[] {
   const url = getPdfUrl(block);
   const caption = getPdfCaption(block);
   if (!url) return [];
-  return [`<pdf url="${url}">${caption}</pdf>`];
+  const label = caption || "PDF";
+  return [`${ctx.indent}[${label}](${url})`];
 }

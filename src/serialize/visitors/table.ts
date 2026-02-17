@@ -12,23 +12,31 @@ export function visitTable(block: NotionBlock, ctx: SerializeContext): string[] 
   if (!payload) return [];
   const children = payload.children ?? [];
   const tableBlocks = Array.isArray(children) ? children : [];
-  const attrs: string[] = [];
-  if (payload.has_column_header !== undefined) attrs.push(`header-row="${payload.has_column_header}"`);
-  if (payload.has_row_header !== undefined) attrs.push(`header-column="${payload.has_row_header}"`);
-  const attrStr = attrs.length ? " " + attrs.join(" ") : "";
-  const lines = [`<table${attrStr}>`];
-  // Notion table: first child is table_row blocks; we don't have colgroup in API typically
+
+  const rows: string[][] = [];
   for (const rowBlock of tableBlocks) {
     if (rowBlock.type !== "table_row") continue;
     const rowPayload = rowBlock[rowBlock.type];
-    const cells = (rowPayload && typeof rowPayload === "object" && (rowPayload as { cells?: { rich_text?: unknown[] }[] }).cells) ?? [];
-    const cellParts = cells.map((cell: { rich_text?: unknown[] }) => {
+    const cellsRaw = (rowPayload && typeof rowPayload === "object" && (rowPayload as { cells?: { rich_text?: unknown[] }[] }).cells);
+    const cells = Array.isArray(cellsRaw) ? cellsRaw : [];
+    const row = cells.map((cell: { rich_text?: unknown[] }) => {
       const rt = Array.isArray(cell?.rich_text) ? cell.rich_text : [];
-      const md = richTextToInlineMarkdown(rt as import("../../types").NotionRichText[]);
-      return `<td>${md}</td>`;
+      return richTextToInlineMarkdown(rt as import("../../types").NotionRichText[]);
     });
-    lines.push("<tr>" + cellParts.join("") + "</tr>");
+    rows.push(row);
   }
-  lines.push("</table>");
+
+  if (rows.length === 0) return [];
+
+  const colCount = Math.max(...rows.map((r) => r.length));
+  const lines: string[] = [];
+  for (let i = 0; i < rows.length; i++) {
+    const cells = rows[i];
+    while (cells.length < colCount) cells.push("");
+    lines.push(`${ctx.indent}| ${cells.join(" | ")} |`);
+    if (i === 0) {
+      lines.push(`${ctx.indent}| ${cells.map(() => "---").join(" | ")} |`);
+    }
+  }
   return lines;
 }

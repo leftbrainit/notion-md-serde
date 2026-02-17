@@ -9,6 +9,10 @@ export function visitCode(block: NotionBlock, ctx: SerializeContext): string[] {
   const content = richText.map((r) => r.plain_text ?? r.text?.content ?? "").join("");
   const children = getBlockChildren(block);
   const childLines = children.length ? ctx.visitChildren(children) : [];
-  const lines = ["```" + lang, ...content.split("\n"), "```"];
+  const lines = [
+    `${ctx.indent}\`\`\`${lang}`,
+    ...content.split("\n").map((l) => ctx.indent + l),
+    `${ctx.indent}\`\`\``,
+  ];
   return [...lines, ...childLines];
 }

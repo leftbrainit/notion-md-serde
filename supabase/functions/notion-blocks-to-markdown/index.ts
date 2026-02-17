@@ -7,10 +7,9 @@
 //
 // Response: { "markdown": "..." }
 
-// @deno-types="https://esm.sh/notion-md-serde@0.1.0/dist/index.d.ts"
-import { notionBlocksToMarkdown } from "https://esm.sh/notion-md-serde@0.1.0";
+// @deno-types="https://esm.sh/notion-md-serde@0.1.2/dist/index.d.ts"
+import { notionBlocksToMarkdown } from "https://esm.sh/notion-md-serde@0.1.2";
 
-// NotionBlock-like shape: type + optional top-level children + type-specific payload
 interface BlockInput {
   type: string;
   id?: string;
@@ -42,6 +41,22 @@ function normalizeBlocks(blocks: BlockInput[]): BlockInput[] {
     };
     return normalized;
   });
+}
+
+/** Recursively strip image blocks from the tree (their signed URLs expire quickly). */
+function stripImages(blocks: BlockInput[]): BlockInput[] {
+  return blocks
+    .filter((b) => b.type !== "image")
+    .map((block) => {
+      const payload = block[block.type] as Record<string, unknown> | undefined;
+      if (payload && Array.isArray(payload.children)) {
+        return {
+          ...block,
+          [block.type]: { ...payload, children: stripImages(payload.children as BlockInput[]) },
+        };
+      }
+      return block;
+    });
 }
 
 function parseBody(body: string): BlockInput[] {
@@ -83,7 +98,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     const blocks = parseBody(body);
     const normalized = normalizeBlocks(blocks);
-    const markdown = notionBlocksToMarkdown(normalized);
+    const cleaned = stripImages(normalized);
+    const markdown = notionBlocksToMarkdown(cleaned);
 
     return Response.json(
       { markdown },

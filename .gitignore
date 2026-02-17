@@ -31,3 +31,7 @@ Thumbs.db
 
 # Optional
 *.tsbuildinfo
+
+# Examples
+examples/
+examples/**

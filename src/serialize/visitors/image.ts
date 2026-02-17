@@ -16,10 +16,10 @@ function getImageCaption(block: NotionBlock): string {
   return cap.map((c) => c.plain_text ?? "").join("");
 }
 
-export function visitImage(block: NotionBlock, _ctx: SerializeContext): string[] {
+export function visitImage(block: NotionBlock, ctx: SerializeContext): string[] {
   const url = getImageUrl(block);
   const caption = getImageCaption(block);
   const alt = caption || "image";
   if (!url) return [];
-  return [`![${alt}](${url})`];
+  return [`${ctx.indent}![${alt}](${url})`];
 }

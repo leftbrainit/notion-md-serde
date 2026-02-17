@@ -1,21 +1,60 @@
 import type { NotionBlock } from "../../types";
 import type { SerializeContext } from "../types";
 import { blockRichTextToMd, getBlockChildren } from "../block-helpers";
-import { normalizeNotionColor } from "../../utils/colors";
 
-function attr(key: string, value: string | undefined): string {
-  return value !== undefined && value !== "" ? ` ${key}="${value}"` : "";
+/**
+ * Attempt to merge a callout's toggle+paragraph children into a single line.
+ * Pattern: callout (empty text) → toggle "Title" → paragraph "Description"
+ * Result: > **Title** — Description
+ */
+function tryMergeToggleParagraph(
+  children: NotionBlock[],
+  indent: string,
+): string | null {
+  const renderable = children.filter((c) => {
+    if (c.type === "toggle") return true;
+    if (c.type === "paragraph") {
+      const md = blockRichTextToMd(c);
+      return !!md;
+    }
+    return false;
+  });
+  if (renderable.length !== 2) return null;
+  if (renderable[0].type !== "toggle" || renderable[1].type !== "paragraph") return null;
+
+  const toggleMd = blockRichTextToMd(renderable[0]);
+  const paraMd = blockRichTextToMd(renderable[1]);
+  if (!toggleMd || !paraMd) return null;
+
+  return `${indent}> ${toggleMd} — ${paraMd}`;
 }
 
 export function visitCallout(block: NotionBlock, ctx: SerializeContext): string[] {
-  const payload = block[block.type];
-  const p = payload && typeof payload === "object" ? (payload as { icon?: { emoji?: string }; color?: string }) : {};
-  const icon = p.icon?.emoji ?? "";
-  const color = normalizeNotionColor(p.color);
   const md = blockRichTextToMd(block);
-  const open = `<callout${attr("icon", icon)}${color !== "default" ? attr("color", color) : ""}>`;
-  const close = "</callout>";
   const children = getBlockChildren(block);
-  const childLines = children.length ? ctx.visitChildren(children) : [];
-  return [open + md + close, ...childLines];
+  const baseIndent = ctx.indent.replace(/^ +/, "");
+
+  if (!md && children.length > 0) {
+    const merged = tryMergeToggleParagraph(children, baseIndent);
+    if (merged) return [merged];
+  }
+
+  const lines: string[] = [];
+
+  if (md) {
+    lines.push(`${baseIndent}> ${md}`);
+  }
+
+  if (children.length) {
+    const childLines = ctx.visitChildren(children, {
+      indent: baseIndent + "> ",
+    });
+    lines.push(...childLines);
+  }
+
+  if (lines.length === 0) {
+    lines.push(`${baseIndent}>`);
+  }
+
+  return lines;
 }

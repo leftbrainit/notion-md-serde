@@ -1,12 +1,13 @@
 import type { NotionBlock } from "../../types";
 import type { SerializeContext } from "../types";
-import { blockRichTextToMd, colorSuffix, getBlockChildren } from "../block-helpers";
+import { blockRichTextToMd, getBlockChildren } from "../block-helpers";
 
 export function visitQuote(block: NotionBlock, ctx: SerializeContext): string[] {
   const md = blockRichTextToMd(block);
-  const color = colorSuffix(block);
-  const line = `> ${md}${color}`.trimEnd();
+  const line = `${ctx.indent}> ${md}`.trimEnd();
   const children = getBlockChildren(block);
-  const childLines = children.length ? ctx.visitChildren(children) : [];
+  const childLines = children.length
+    ? ctx.visitChildren(children, { indent: ctx.indent + "> " })
+    : [];
   return [line, ...childLines];
 }
